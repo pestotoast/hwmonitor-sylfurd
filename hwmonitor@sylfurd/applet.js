@@ -27,12 +27,12 @@ const St = imports.gi.St;
 const Cairo = imports.cairo;
 
 const graph_width = 44;
-const panel_height = 22;
 const graph_count = 3;
-const update_ms = 500;
-const net_bytes_per_sec_max = 1024000;
-const top_offset_pixels = 2;
-
+const update_ms = 1000;
+const net_bytes_per_sec_max = 4096000;
+var network_card_name = "offline";
+const ethernet = "enp0s31f6";
+const wifi = "wlp3s0";
 
 function MyApplet(orientation) {
 	this._init(orientation);
@@ -41,10 +41,11 @@ function MyApplet(orientation) {
 MyApplet.prototype = {
 	__proto__: Applet.Applet.prototype,
 
-    _init: function(orientation) {
-        Applet.Applet.prototype._init.call(this, orientation);	
+	_init: function(orientation) {
+		Applet.Applet.prototype._init.call(this, orientation);	
 
 		try {
+			
 			this.itemOpenSysMon = new PopupMenu.PopupMenuItem("Open System Monitor");
 			this.itemOpenSysMon.connect('activate', Lang.bind(this, this._runSysMonActivate));
 			this._applet_context_menu.addMenuItem(this.itemOpenSysMon);
@@ -61,7 +62,7 @@ MyApplet.prototype = {
 
 			let cpuGraph = new Graph(this.graphArea, cpuProvider);
 			let memGraph = new Graph(this.graphArea, memProvider);
-      let netGraph = new Graph(this.graphArea, netProvider);
+                        let netGraph = new Graph(this.graphArea, netProvider);
 
 			this.graphs = new Array();
 			this.graphs[0] = cpuGraph;
@@ -89,7 +90,6 @@ MyApplet.prototype = {
 		{
 			this.graphs[i].refreshData();
 		}
-			
 		this.graphArea.queue_repaint();
 
 		Mainloop.timeout_add(update_ms, Lang.bind(this, this._update));
@@ -137,7 +137,7 @@ Graph.prototype = {
         	this.datas[i] = 0;
         }
 
-		this.height = panel_height;
+		this.height = 20;
 		this.provider = _provider;
 
 	},
@@ -170,7 +170,7 @@ Graph.prototype = {
         cr.fill();
 
         // Label
-		cr.setFontSize(9);
+		cr.setFontSize(8);
         cr.setSourceRGBA(0, 0, 0, 0.5);
 		cr.moveTo(2.5, 11.5);
 		cr.showText(this.provider.getName());
@@ -178,11 +178,11 @@ Graph.prototype = {
 		cr.moveTo(2, 11);
 		cr.showText(this.provider.getName());
 
-},
+	},
 
 	refreshData: function()
 	{
-		let data = this.provider.getData()*(this.height - top_offset_pixels);
+		let data = this.provider.getData()*(this.height-1);
 
 		if (this.datas.push(data)>this.width-2)
 		{
@@ -260,51 +260,72 @@ function NetDataProvider() {
 NetDataProvider.prototype = {
 	
 	_init: function(){
-			this.gtopNet = new GTop.glibtop_netload();	
-		
-      // Set initial data
-      GTop.glibtop_get_netload(this.gtopNet, "wlp4s0");
+	//this.gtopNet = new GTop.glibtop_netload();
+	this.gtopEth = new GTop.glibtop_netload();
+	this.gtopWifi = new GTop.glibtop_netload();		
 
-			this.bytes_out_current = 0;
-			this.bytes_in_current = 0;
-			this.bytes_total_current = 0;
+        // Set initial data
+        GTop.glibtop_get_netload(this.gtopWifi, wifi);
+	this.bytes_out_current = 0;
+	this.bytes_in_current = 0;
+	this.bytes_total_current = 0;
 
-	  	this.bytes_out_last   = this.gtopNet.bytes_out;
-		  this.bytes_in_last    = this.gtopNet.bytes_in;
-		  this.bytes_total_last = this.gtopNet.bytes_total;
-
-			this.usage = 0;
+  	this.bytes_out_last   = this.gtopWifi.bytes_out;
+	this.bytes_in_last    = this.gtopWifi.bytes_in;
+	this.bytes_total_last = this.gtopWifi.bytes_total;
+	this.usage = 0;
 	},
 
 	getData: function()
 	{
-		GTop.glibtop_get_netload(this.gtopNet, "wlp4s0");
+		try 
+		{
+			let gtop;
+			GTop.glibtop_get_netload(this.gtopEth, ethernet);
+			let ethernet_address = this.gtopEth.address;
+			if(ethernet_address != 0)
+			{
+				gtop = this.gtopEth;
+				network_card_name = ethernet
+			}
 
-		this.bytes_out_current   = this.gtopNet.bytes_out;
-		this.bytes_in_current    = this.gtopNet.bytes_in;
-		this.bytes_total_current = this.gtopNet.bytes_total;
+			GTop.glibtop_get_netload(this.gtopWifi, wifi);
+			let wifi_adress = this.gtopWifi.address;
+			if(wifi_adress != 0)
+			{
+				gtop = this.gtopWifi;
+				network_card_name = String(wifi);
+			}
 
-		// THis will be shown, set to bytes in for now.
-		this.usage               = this.bytes_total_current - this.bytes_total_last;
+			this.bytes_out_current   = gtop.bytes_out;
+			this.bytes_in_current    = gtop.bytes_in;
+			this.bytes_total_current = gtop.bytes_total;
 
-		// Buffer current values
-		this.bytes_out_last   = this.bytes_out_current;
-		this.bytes_in_last    = this.bytes_in_current;
-		this.bytes_total_last = this.bytes_total_current;
-		
-		//global.log(this.usage);
+			// THis will be shown, set to bytes in for now.
+			this.usage               = this.bytes_total_current - this.bytes_total_last;
 
+			// Buffer current values
+			this.bytes_out_last   = this.bytes_out_current;
+			this.bytes_in_last    = this.bytes_in_current;
+			this.bytes_total_last = this.bytes_total_current;
+	
+			//global.log(this.usage);
+		}
+		catch(e)
+		{
+			//global.log(e);
+		}
 
-		return this.usage / net_bytes_per_sec_max * 1000 / update_ms; //- (this.gtopNet.buffer + this.gtopNet.cached + this.gtopNet.free) / this.gtopNet.total;
+		return this.usage / net_bytes_per_sec_max * 1000 / update_ms; //- (gtop.buffer + gtop.cached + gtop.free) / gtop.total;
 	},
 
 	getName: function()
 	{
-		return "NET";
+		return String(network_card_name);
 	}
 };
 
 function main(metadata, orientation) {
-	let myApplet = new MyApplet(orientation);
+	let myApplet = new MyApplet(orientation);	
 	return myApplet;
 }
