@@ -1,0 +1,7 @@
+{
+    "last-edited": "1328097600", 
+    "description": "Displaying realtime CPU and memory load", 
+    "icon": "utilities-system-monitor", 
+    "uuid": "hwmonitor@sylfurd", 
+    "name": "Graphical hardware monitor"
+}
