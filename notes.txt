@@ -1,0 +1,1 @@
+location: ~/.local/share/cinnamon/applets/hwmonitor\@sylfurd
