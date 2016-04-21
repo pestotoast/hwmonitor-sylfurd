@@ -25,30 +25,57 @@ const Mainloop = imports.mainloop;
 const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Cairo = imports.cairo;
+const Settings = imports.ui.settings;
 
 const graph_width = 44;
 const graph_count = 3;
-const update_ms = 1000;
-const net_bytes_per_sec_max = 4096000;
+var update_ms = 1000;
+var net_bytes_per_sec_max = 4095;
 var network_card_name = "offline";
-const ethernet = "enp0s31f6";
-const wifi = "wlp3s0";
+var secondary_card = "enp3s031f6";
+var primary_card = "wlp3s0";
 
-function MyApplet(orientation) {
-	this._init(orientation);
+function MyApplet(metadata, orientation, instanceId) {
+	this._init(metadata, orientation, instanceId);
 }
 
 MyApplet.prototype = {
 	__proto__: Applet.Applet.prototype,
 
-	_init: function(orientation) {
-		Applet.Applet.prototype._init.call(this, orientation);	
+	_init: function(orientation, instanceId) {
+		Applet.Applet.prototype._init.call(this, orientation, instanceId);	
 
 		try {
-			
 			this.itemOpenSysMon = new PopupMenu.PopupMenuItem("Open System Monitor");
 			this.itemOpenSysMon.connect('activate', Lang.bind(this, this._runSysMonActivate));
 			this._applet_context_menu.addMenuItem(this.itemOpenSysMon);
+
+            		this.settings = new Settings.AppletSettings(this, "hwmonitor@sylfurd", instanceId);
+
+			this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "update_ms",
+                                   "update_ms",
+                                   this.on_settings_changed,
+                                   null);
+
+			this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "primary_card",
+                                   "primary_card",
+                                   this.on_settings_changed,
+                                   null);
+			
+			this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "secondary_card",
+                                   "secondary_card",
+                                   this.on_settings_changed,
+                                   null);			
+	
+			this.settings.bindProperty(Settings.BindingDirection.IN,
+                                   "net_bytes_per_sec_max",
+                                   "net_bytes_per_sec_max",
+                                   this.on_settings_changed,
+                                   null);
+			this._setOptions();
 
 			this.graphArea = new St.DrawingArea();
 			this.graphArea.width = graph_width * graph_count
@@ -68,7 +95,6 @@ MyApplet.prototype = {
 			this.graphs[0] = cpuGraph;
 			this.graphs[1] = memGraph;
                         this.graphs[2] = netGraph;
-
 			this._update();
 		}
 		catch (e) {
@@ -77,9 +103,21 @@ MyApplet.prototype = {
 	},
 
 	on_applet_clicked: function(event) {
+		global.log("hwmonitor_clicked");
 		this._runSysMon();
 	},
 
+	on_settings_changed : function() {
+	        global.log("settings changed");
+			this._setOptions();
+    	},
+	
+	_setOptions: function() {
+		net_bytes_per_sec_max = this.net_bytes_per_sec_max * 1000;
+		secondary_card = this.secondary_card;
+		primary_card = this.primary_card;
+		update_ms = this.update_ms;	
+	},
 	_runSysMonActivate: function() {
 		this._runSysMon();
 	},
@@ -262,17 +300,17 @@ NetDataProvider.prototype = {
 	_init: function(){
 	//this.gtopNet = new GTop.glibtop_netload();
 	this.gtopEth = new GTop.glibtop_netload();
-	this.gtopWifi = new GTop.glibtop_netload();		
+	this.gtopprimary_card = new GTop.glibtop_netload();		
 
         // Set initial data
-        GTop.glibtop_get_netload(this.gtopWifi, wifi);
+        GTop.glibtop_get_netload(this.gtopprimary_card, primary_card);
 	this.bytes_out_current = 0;
 	this.bytes_in_current = 0;
 	this.bytes_total_current = 0;
 
-  	this.bytes_out_last   = this.gtopWifi.bytes_out;
-	this.bytes_in_last    = this.gtopWifi.bytes_in;
-	this.bytes_total_last = this.gtopWifi.bytes_total;
+  	this.bytes_out_last   = this.gtopprimary_card.bytes_out;
+	this.bytes_in_last    = this.gtopprimary_card.bytes_in;
+	this.bytes_total_last = this.gtopprimary_card.bytes_total;
 	this.usage = 0;
 	},
 
@@ -281,20 +319,20 @@ NetDataProvider.prototype = {
 		try 
 		{
 			let gtop;
-			GTop.glibtop_get_netload(this.gtopEth, ethernet);
-			let ethernet_address = this.gtopEth.address;
-			if(ethernet_address != 0)
+			GTop.glibtop_get_netload(this.gtopEth, secondary_card);
+			let secondary_card_address = this.gtopEth.address;
+			if(secondary_card_address != 0)
 			{
 				gtop = this.gtopEth;
-				network_card_name = ethernet
+				network_card_name = secondary_card
 			}
 
-			GTop.glibtop_get_netload(this.gtopWifi, wifi);
-			let wifi_adress = this.gtopWifi.address;
-			if(wifi_adress != 0)
+			GTop.glibtop_get_netload(this.gtopprimary_card, primary_card);
+			let primary_card_adress = this.gtopprimary_card.address;
+			if(primary_card_adress != 0)
 			{
-				gtop = this.gtopWifi;
-				network_card_name = String(wifi);
+				gtop = this.gtopprimary_card;
+				network_card_name = String(primary_card);
 			}
 
 			this.bytes_out_current   = gtop.bytes_out;
@@ -307,13 +345,11 @@ NetDataProvider.prototype = {
 			// Buffer current values
 			this.bytes_out_last   = this.bytes_out_current;
 			this.bytes_in_last    = this.bytes_in_current;
-			this.bytes_total_last = this.bytes_total_current;
-	
-			//global.log(this.usage);
+			this.bytes_total_last = this.bytes_total_current;	
 		}
 		catch(e)
 		{
-			//global.log(e);
+			global.log(e);
 		}
 
 		return this.usage / net_bytes_per_sec_max * 1000 / update_ms; //- (gtop.buffer + gtop.cached + gtop.free) / gtop.total;
@@ -325,7 +361,7 @@ NetDataProvider.prototype = {
 	}
 };
 
-function main(metadata, orientation) {
-	let myApplet = new MyApplet(orientation);	
+function main(metadata, orientation, instanceId) {
+	let myApplet = new MyApplet(metadata, orientation, instanceId);
 	return myApplet;
 }

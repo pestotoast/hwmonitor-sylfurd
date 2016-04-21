@@ -1,0 +1,22 @@
+{
+    "primary_card": {
+        "type" : "entry",
+        "default" : "wlan0",
+        "description" : "Primary Networkcard"
+    },
+    "secondary_card": {
+        "type" : "entry",
+        "default" : "eth0",
+        "description" : "Secondary Networkcard"
+    },
+    "net_bytes_per_sec_max": {
+        "type" : "entry",
+        "default" : "4096",
+        "description" : "Maximum KB/s"
+    },
+    "update_ms": {
+        "type" : "entry",
+        "default" : "1000",
+        "description" : "Update Interval (ms)"
+    }
+}
