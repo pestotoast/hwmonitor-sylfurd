@@ -26,6 +26,7 @@ const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Cairo = imports.cairo;
 const Settings = imports.ui.settings;
+const Main = imports.ui.main;
 
 const graph_width = 44;
 const graph_count = 3;
@@ -42,7 +43,7 @@ function MyApplet(metadata, orientation, instanceId) {
 MyApplet.prototype = {
 	__proto__: Applet.Applet.prototype,
 
-	_init: function(orientation, instanceId) {
+	_init: function(metadata, orientation, instanceId) {
 		Applet.Applet.prototype._init.call(this, orientation, instanceId);	
 
 		try {
