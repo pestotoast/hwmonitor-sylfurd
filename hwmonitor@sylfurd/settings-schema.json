@@ -1,22 +1,27 @@
 {
-    "primary_card": {
+    "option_primary_card": {
         "type" : "entry",
         "default" : "wlan0",
         "description" : "Primary Networkcard"
     },
-    "secondary_card": {
+    "option_secondary_card": {
         "type" : "entry",
         "default" : "eth0",
         "description" : "Secondary Networkcard"
     },
-    "net_kbit_per_sec_max": {
+    "option_net_kbyte_per_sec_max": {
         "type" : "entry",
         "default" : "4096",
         "description" : "Maximum KB/s"
     },
-    "update_ms": {
+    "option_update_ms": {
         "type" : "entry",
         "default" : "1000",
         "description" : "Update Interval (ms)"
+    },
+    "option_debug": {
+        "type" : "checkbox",
+        "default" : false,
+        "description" : "Enable debugprinting in glass.log"
     }
 }
