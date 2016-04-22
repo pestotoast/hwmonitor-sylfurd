@@ -33,10 +33,11 @@ const graph_count = 3;
 const panel_height = 20;
 
 var update_ms = 1000;
-var net_kbit_per_sec_max = 4095;
+var net_kbyte_per_sec_max = 4095;
 var network_card_name = "offline";
 var secondary_card = "enp3s031f6";
 var primary_card = "wlp3s0";
+var debug = false;
 
 function MyApplet(metadata, orientation, instanceId) {
 	this._init(metadata, orientation, instanceId);
@@ -51,34 +52,8 @@ MyApplet.prototype = {
 		try {
 			this.itemOpenSysMon = new PopupMenu.PopupMenuItem("Open System Monitor");
 			this.itemOpenSysMon.connect('activate', Lang.bind(this, this._runSysMonActivate));
-			this._applet_context_menu.addMenuItem(this.itemOpenSysMon);
 
-            		this.settings = new Settings.AppletSettings(this, "hwmonitor@sylfurd", instanceId);
-
-			this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "update_ms",
-                                   "update_ms",
-                                   this.on_settings_changed,
-                                   null);
-
-			this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "primary_card",
-                                   "primary_card",
-                                   this.on_settings_changed,
-                                   null);
-			
-			this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "secondary_card",
-                                   "secondary_card",
-                                   this.on_settings_changed,
-                                   null);			
-	
-			this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "net_kbit_per_sec_max",
-                                   "net_kbit_per_sec_max",
-                                   this.on_settings_changed,
-                                   null);
-			this._setOptions();
+            this._init_settings(instanceId);
 
 			this.graphArea = new St.DrawingArea();
 			this.graphArea.width = graph_width * graph_count
@@ -105,6 +80,42 @@ MyApplet.prototype = {
 		}
 	},
 
+	_init_settings: function(instanceId) {
+	    this._applet_context_menu.addMenuItem(this.itemOpenSysMon);
+
+        this.settings = new Settings.AppletSettings(this, "hwmonitor@sylfurd", instanceId);
+
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                               "option_update_ms",
+                               "option_update_ms",
+                               this.on_settings_changed,
+                               null);
+
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                               "option_primary_card",
+                               "option_primary_card",
+                               this.on_settings_changed,
+                               null);
+
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                               "option_secondary_card",
+                               "option_secondary_card",
+                               this.on_settings_changed,
+                               null);
+
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                               "option_net_kbyte_per_sec_max",
+                               "option_net_kbyte_per_sec_max",
+                               this.on_settings_changed,
+                               null);
+        this.settings.bindProperty(Settings.BindingDirection.IN,
+                               "option_debug",
+                               "option_debug",
+                               this.on_settings_changed,
+                               null);
+        this._setOptions();
+	},
+
 	on_applet_clicked: function(event) {
 		global.log("hwmonitor_clicked");
 		this._runSysMon();
@@ -116,10 +127,11 @@ MyApplet.prototype = {
     	},
 	
 	_setOptions: function() {
-		net_kbit_per_sec_max = this.net_kbit_per_sec_max;
-		secondary_card = this.secondary_card;
-		primary_card = this.primary_card;
-		update_ms = this.update_ms;	
+		net_kbyte_per_sec_max = this.option_net_kbyte_per_sec_max;
+		secondary_card = this.option_secondary_card;
+		primary_card = this.option_primary_card;
+		update_ms = this.option_update_ms;
+		debug = this.option_debug;
 	},
 	_runSysMonActivate: function() {
 		this._runSysMon();
@@ -355,9 +367,15 @@ NetDataProvider.prototype = {
 			global.log(e);
 		}
 
-    let result = this.usage / net_kbit_per_sec_max * 1000 / update_ms; //- (gtop.buffer + gtop.cached + gtop.free) / gtop.total; 
+    let usage_kbyte_per_sec = (this.usage / update_ms) *  1.024 ; // transform bytes per tick into kbyte/s
 
-    return result > 1 ? 1 : result;
+    let result = usage_kbyte_per_sec / net_kbyte_per_sec_max; // project onto [0..1] scale
+
+    if (debug) {
+        global.log("Result is " + result + "usage is " + this.usage);
+    }
+
+    return result > 1 ? 1 : result; // 1 is 100% (maximum displayed.)
 	},
 
 	getName: function()
