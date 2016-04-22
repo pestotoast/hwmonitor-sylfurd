@@ -1,1 +1,2 @@
-location: ~/.local/share/cinnamon/applets/hwmonitor\@sylfurd
+cp -rv hwmonitor\@sylfurd/*  ~/.local/share/cinnamon/applets/hwmonitor\@sylfurd
+# location: ~/.local/share/cinnamon/applets/hwmonitor\@sylfurd

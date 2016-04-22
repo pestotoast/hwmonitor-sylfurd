@@ -30,8 +30,10 @@ const Main = imports.ui.main;
 
 const graph_width = 44;
 const graph_count = 3;
+const panel_height = 20;
+
 var update_ms = 1000;
-var net_bytes_per_sec_max = 4095;
+var net_kbit_per_sec_max = 4095;
 var network_card_name = "offline";
 var secondary_card = "enp3s031f6";
 var primary_card = "wlp3s0";
@@ -72,8 +74,8 @@ MyApplet.prototype = {
                                    null);			
 	
 			this.settings.bindProperty(Settings.BindingDirection.IN,
-                                   "net_bytes_per_sec_max",
-                                   "net_bytes_per_sec_max",
+                                   "net_kbit_per_sec_max",
+                                   "net_kbit_per_sec_max",
                                    this.on_settings_changed,
                                    null);
 			this._setOptions();
@@ -114,7 +116,7 @@ MyApplet.prototype = {
     	},
 	
 	_setOptions: function() {
-		net_bytes_per_sec_max = this.net_bytes_per_sec_max * 1000;
+		net_kbit_per_sec_max = this.net_kbit_per_sec_max;
 		secondary_card = this.secondary_card;
 		primary_card = this.primary_card;
 		update_ms = this.update_ms;	
@@ -176,7 +178,7 @@ Graph.prototype = {
         	this.datas[i] = 0;
         }
 
-		this.height = 20;
+		this.height = panel_height;
 		this.provider = _provider;
 
 	},
@@ -340,7 +342,7 @@ NetDataProvider.prototype = {
 			this.bytes_in_current    = gtop.bytes_in;
 			this.bytes_total_current = gtop.bytes_total;
 
-			// THis will be shown, set to bytes in for now.
+			// This will be shown, set to total in for now.
 			this.usage               = this.bytes_total_current - this.bytes_total_last;
 
 			// Buffer current values
@@ -353,7 +355,9 @@ NetDataProvider.prototype = {
 			global.log(e);
 		}
 
-		return this.usage / net_bytes_per_sec_max * 1000 / update_ms; //- (gtop.buffer + gtop.cached + gtop.free) / gtop.total;
+    let result = this.usage / net_kbit_per_sec_max * 1000 / update_ms; //- (gtop.buffer + gtop.cached + gtop.free) / gtop.total; 
+
+    return result > 1 ? 1 : result;
 	},
 
 	getName: function()
