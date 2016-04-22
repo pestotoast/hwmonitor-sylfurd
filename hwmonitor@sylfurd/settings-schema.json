@@ -9,7 +9,7 @@
         "default" : "eth0",
         "description" : "Secondary Networkcard"
     },
-    "net_bytes_per_sec_max": {
+    "net_kbit_per_sec_max": {
         "type" : "entry",
         "default" : "4096",
         "description" : "Maximum KB/s"
