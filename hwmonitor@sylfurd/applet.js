@@ -28,7 +28,7 @@ const Cairo = imports.cairo;
 const Settings = imports.ui.settings;
 const Main = imports.ui.main;
 
-const graph_width = 44;
+const graph_width = 144;
 const graph_count = 3;
 const panel_height = 20;
 
