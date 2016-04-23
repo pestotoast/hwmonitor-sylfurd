@@ -28,7 +28,7 @@ const Cairo = imports.cairo;
 const Settings = imports.ui.settings;
 const Main = imports.ui.main;
 
-const graph_width = 144;
+const graph_width = 44;
 const graph_count = 3;
 const panel_height = 20;
 
@@ -333,6 +333,14 @@ NetDataProvider.prototype = {
 	{
 		try 
 		{
+      this.gtop_netlist = new GTop.glibtop_netlist();
+
+      var array = GTop.glibtop_get_netlist(this.gtop_netlist);
+      if (debug) {
+           global.log(array);
+           global.log("number" + this.gtop_netlist.number);
+      }
+
 			let gtop;
 			GTop.glibtop_get_netload(this.gtopEth, secondary_card);
 			let secondary_card_address = this.gtopEth.address;
