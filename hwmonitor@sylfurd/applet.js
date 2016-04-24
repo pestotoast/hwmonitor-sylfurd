@@ -38,6 +38,7 @@ var network_card_name = "offline";
 var secondary_card = "enp3s031f6";
 var primary_card = "wlp3s0";
 var debug = false;
+var aviable_net_ifaces;
 
 function MyApplet(metadata, orientation, instanceId) {
 	this._init(metadata, orientation, instanceId);
@@ -53,8 +54,7 @@ MyApplet.prototype = {
 			this.itemOpenSysMon = new PopupMenu.PopupMenuItem("Open System Monitor");
 			this.itemOpenSysMon.connect('activate', Lang.bind(this, this._runSysMonActivate));
 
-            this._init_settings(instanceId);
-
+      this._init_settings(instanceId);
 			this.graphArea = new St.DrawingArea();
 			this.graphArea.width = graph_width * graph_count
 			this.graphArea.connect('repaint', Lang.bind(this, this.onGraphRepaint));
@@ -113,12 +113,17 @@ MyApplet.prototype = {
                                "option_debug",
                                this.on_settings_changed,
                                null);
+        this.settings.bindProperty(Settings.BindingDirection.OUT,
+                               "option_test",
+                               "option_test",
+                               null,
+                               null);
         this._setOptions();
 	},
 
 	on_applet_clicked: function(event) {
 		global.log("hwmonitor_clicked");
-		this._runSysMon();
+		//this._runSysMon(); // unused
 	},
 
 	on_settings_changed : function() {
@@ -139,7 +144,9 @@ MyApplet.prototype = {
 
 	_update: function() {
 
-		for (i = 0; i < this.graphs.length; i++)
+    this.option_test = aviable_net_ifaces;
+
+    for (i = 0; i < this.graphs.length; i++)
 		{
 			this.graphs[i].refreshData();
 		}
@@ -335,10 +342,15 @@ NetDataProvider.prototype = {
 		{
       this.gtop_netlist = new GTop.glibtop_netlist();
 
-      var array = GTop.glibtop_get_netlist(this.gtop_netlist);
+      let if_array = GTop.glibtop_get_netlist(this.gtop_netlist);
+      
+      aviable_net_ifaces = if_array.toString();
+
       if (debug) {
-           global.log(array);
-           global.log("number" + this.gtop_netlist.number);
+           global.log("GTop.glibtop_get_netlist: "+ if_array);
+           global.log("gtop_netlist.number.number: " + this.gtop_netlist.number);
+           global.log("gtop_netlist.number.flags: " + this.gtop_netlist.flags);
+           global.log("test: " + aviable_net_ifaces);
       }
 
 			let gtop;
