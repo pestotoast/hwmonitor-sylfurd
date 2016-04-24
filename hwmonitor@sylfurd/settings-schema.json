@@ -23,5 +23,10 @@
         "type" : "checkbox",
         "default" : false,
         "description" : "Enable debugprinting in glass.log"
+    },
+    "option_test": {
+        "type" : "entry",
+        "default" : "value",
+        "description" : "test option"
     }
 }
