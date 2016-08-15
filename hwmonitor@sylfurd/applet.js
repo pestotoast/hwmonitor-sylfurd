@@ -1,5 +1,5 @@
 /*
-Copyright 2012 Renaud Delcoigne (Aka Sylfurd)
+ Copyright 2012 Renaud Delcoigne (Aka Sylfurd)
 
 This file is part of HWMonitor
 
