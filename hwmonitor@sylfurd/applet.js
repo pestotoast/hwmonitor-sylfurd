@@ -146,7 +146,7 @@ MyApplet.prototype = {
 
     this.option_test = aviable_net_ifaces;
 
-    for (i = 0; i < this.graphs.length; i++)
+    for (let i = 0; i < this.graphs.length; i++)
 		{
 			this.graphs[i].refreshData();
 		}
@@ -163,7 +163,7 @@ MyApplet.prototype = {
 
 	onGraphRepaint: function(area) {
 		try {
-			for (index = 0; index < this.graphs.length; index++)
+			for (let index = 0; index < this.graphs.length; index++)
 			{
 				if (index == 0)
 				{
@@ -192,7 +192,7 @@ Graph.prototype = {
 		let [w, h] = _area.get_surface_size();
 		this.datas = new Array(this.width);
 
-		for (i = 0; i <this.datas.length; i++)
+		for (let i = 0; i <this.datas.length; i++)
         {
         	this.datas[i] = 0;
         }
@@ -210,7 +210,7 @@ Graph.prototype = {
         cr.setLineWidth(0);
         cr.moveTo(1, this.height - this.datas[0]);
 
-        for (i = 1; i <this.datas.length; i++)
+        for (let i = 1; i <this.datas.length; i++)
         {
         	cr.lineTo(1+i, this.height - this.datas[i]);
         }
@@ -220,7 +220,7 @@ Graph.prototype = {
 
     	cr.closePath();
 
-        pattern = new Cairo.LinearGradient(0, 0, 0, this.height);
+        let pattern = new Cairo.LinearGradient(0, 0, 0, this.height);
         cr.setSource(pattern);
         pattern.addColorStopRGBA(0, 1, 0, 0, 1);
         pattern.addColorStopRGBA(0.5, 1, 1, 0.2, 1);
@@ -370,17 +370,24 @@ NetDataProvider.prototype = {
 				network_card_name = String(primary_card);
 			}
 
-			this.bytes_out_current   = gtop.bytes_out;
-			this.bytes_in_current    = gtop.bytes_in;
-			this.bytes_total_current = gtop.bytes_total;
+			if (typeof gtop != 'undefined'){
+				this.bytes_out_current   = gtop.bytes_out;
+				this.bytes_in_current    = gtop.bytes_in;
+				this.bytes_total_current = gtop.bytes_total;
 
-			// This will be shown, set to total in for now.
-			this.usage               = this.bytes_total_current - this.bytes_total_last;
+				// This will be shown, set to total in for now.
+				this.usage               = this.bytes_total_current - this.bytes_total_last;
 
-			// Buffer current values
-			this.bytes_out_last   = this.bytes_out_current;
-			this.bytes_in_last    = this.bytes_in_current;
-			this.bytes_total_last = this.bytes_total_current;	
+				// Buffer current values
+				this.bytes_out_last   = this.bytes_out_current;
+				this.bytes_in_last    = this.bytes_in_current;
+				this.bytes_total_last = this.bytes_total_current;	
+			}
+			else{
+				this.usage = 0;
+			}
+
+			
 		}
 		catch(e)
 		{
