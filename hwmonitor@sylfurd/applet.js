@@ -30,7 +30,7 @@ const Main = imports.ui.main;
 
 const graph_width = 44;
 const graph_count = 3;
-const panel_height = 20;
+const panel_height = 29;
 
 var update_ms = 1000;
 var net_kbyte_per_sec_max = 4095;
@@ -308,7 +308,7 @@ MemDataProvider.prototype = {
 
 	getName: function()
 	{
-		return "MEM";
+		return "Mem";
 	}
 };
 
@@ -407,7 +407,7 @@ NetDataProvider.prototype = {
 
 	getName: function()
 	{
-		return String(network_card_name);
+		return String("Net");
 	}
 };
 
